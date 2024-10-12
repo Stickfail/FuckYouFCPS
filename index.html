@@ -66,7 +66,8 @@
                     case '3':
                     case 'html editor':
                         output.innerHTML += '<div>Opening HTML Editor...</div>';
-                        // Add functionality to open the HTML editor here
+                        // Redirect to editor.html
+                        window.location.href = 'editor.html'; // Link to the editor
                         break;
                     default:
                         output.innerHTML += '<div>Unknown command. Try again.</div>';
