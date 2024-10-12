@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            transition: background 0.3s ease; /* Smooth transition for background */
+            overflow: hidden;
+            color: #ffffff; /* Light text color */
+        }
+        #output {
+            width: calc(100% - 400px); /* Adjust for editor width */
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            background: #282c34; /* Dark background for output */
+            transition: transform 0.3s ease; /* Smooth transition */
+            position: relative; /* For absolute positioning of the panel */
+            color: #ffffff; /* Light text color for output */
+        }
+        #editorPanel {
+            width: 400px; /* Fixed width for the editor */
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: -400px; /* Start off-screen */
+            background: #1e1e1e; /* Dark background for editor */
+            border-right: 1px solid #444; /* Darker border */
+            padding: 20px;
+            box-sizing: border-box;
+            transition: transform 0.3s ease; /* Smooth transition */
+            z-index: 10; /* Ensure it’s above the output */
+            overflow: hidden; /* Prevent scroll bars */
+        }
+        #editorPanel.open {
+            transform: translateX(100%); /* Slide in */
+        }
+        #toggleButton {
+            position: fixed;
+            top: 20px;
+            left: 10px;
+            z-index: 20; /* Ensure it’s above other content */
+        }
+        #htmlCode {
+            width: calc(100% - 10px);
+            height: 80%; /* Height of the editor */
+            resize: none; /* Disable resizing */
+            margin-top: 10px;
+            background: #1e1e1e; /* Dark background for textarea */
+            color: #ffffff; /* Light text color */
+            border: 1px solid #444; /* Darker border */
+            padding: 10px;
+            font-family: monospace; /* Monospace font for code */
+        }
+        #renderedOutput {
+            width: 150%;
+            height: 100%; /* Full height for rendering output */
+            position: absolute; /* Position it absolutely within the output */
+            top: 0; /* Align to top */
+            left: 0; /* Align to left */
+            overflow: auto; /* Scrollable if content overflows */
+            border: 1px solid #444; /* Darker border for clarity */
+            background: #282c34; /* Dark background for output */
+        }
+
+        iframe {
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            border: none; /* No border for the iframe */
+            background: #ffffff; /* White background for iframe */
+        }
+    </style>
+</head>
+<body>
+    <div id="output">
+        <h1>HTML Output</h1>
+        <p>This area will render your HTML code.</p>
+        <div id="renderedOutput"></div> <!-- Container for rendered output -->
+    </div>
+    <button id="toggleButton" onclick="toggleEditor()">Open Editor</button>
+    <div id="editorPanel">
+        <h1>HTML Editor</h1>
+        <textarea id="htmlCode" placeholder="Write your HTML, CSS, and JavaScript here...">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Your Title Here</title>
+    <style>
+        /* Your CSS goes here */
+        body {
+            background-color: lightblue;
+        }
+    </style>
+</head>
+<body>
+    <!-- Your content goes here -->
+    <h1>Hello World!</h1>
+    <script>
+        // Your body-level JavaScript goes here
+        console.log("Hello from body JavaScript!");
+    </script>
+</body>
+</html>
+        </textarea>
+        <button onclick="runCode()">Run Code</button>
+        <button onclick="setEditorWidth()">Set Editor Width</button>
+        <button onclick="closeEditor()">Close Editor</button>
+    </div>
+    
+    <script>
+        let debuggerOutput = document.getElementById('debugger');
+
+        // Function to highlight syntax
+        function highlightSyntax(code) {
+            // Basic highlighting logic
+            const htmlPattern = /&lt;\/?[\w\s="'-]+&gt;|&lt;!--[\s\S]*?--&gt;/g;
+            const cssPattern = /(?:\w+\s*:\s*[^;]+;?)/g;
+            const jsPattern = /(?:\/\/.*|\/\*[\s\S]*?\*\/|".*?"|'.*?'|`.*?`|[a-zA-Z_]\w*\s*\(.*?\))/g;
+
+            code = code
+                .replace(htmlPattern, '<span style="color: #569cd6;">$&</span>') // HTML tags
+                .replace(cssPattern, '<span style="color: #d19a66;">$&</span>') // CSS properties
+                .replace(jsPattern, '<span style="color: #b5cea8;">$&</span>'); // JavaScript code
+
+            return code;
+        }
+
+        // Function to update the output based on the code
+        function updateOutput() {
+            const code = document.getElementById('htmlCode').value;
+            const renderedOutput = document.getElementById('renderedOutput');
+
+            // Clear previous output
+            renderedOutput.innerHTML = ''; 
+
+            // Create an iframe for the HTML content to execute JavaScript correctly
+            const iframe = document.createElement('iframe');
+            renderedOutput.appendChild(iframe);
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            // Write the HTML and CSS into the iframe
+            iframeDoc.open();
+            iframeDoc.write(code);
+            iframeDoc.close();
+
+            // Capture console logs and errors
+            iframe.contentWindow.console.log = function(message) {
+                logDebuggerMessage(message);
+            };
+            iframe.contentWindow.onerror = function(message) {
+                logDebuggerError(new Error(message));
+            };
+        }
+
+        // Function to toggle the editor panel
+        function toggleEditor() {
+            const panel = document.getElementById('editorPanel');
+            panel.classList.toggle('open'); // Toggle the open class
+        }
+
+        // Function to close the editor panel
+        function closeEditor() {
+            const panel = document.getElementById('editorPanel');
+            panel.classList.remove('open'); // Close the editor
+            document.body.style.background = '#1e1e1e'; // Reset background
+        }
+
+        // Function to set editor width via input alert
+        function setEditorWidth() {
+            const newWidth = prompt("Enter new width for the editor (in pixels):", "400");
+            const panel = document.getElementById('editorPanel');
+            if (newWidth && !isNaN(newWidth) && newWidth > 200) { // Check for valid input
+                panel.style.width = newWidth + 'px';
+                panel.style.left = (window.innerWidth - newWidth) + 'px'; // Adjust left position
+                document.getElementById('output').style.width = (window.innerWidth - newWidth) + 'px'; // Adjust output width
+            } else {
+                alert("Please enter a valid number greater than 200.");
+            }
+        }
+
+        // Function to run code when button is clicked
+        function runCode() {
+            updateOutput(); // Update output to reflect the current code
+            debuggerOutput.innerHTML = ""; // Clear previous debugger output
+            logDebuggerMessage("Running code..."); // Log message
+        }
+
+        // Log messages to debugger
+        function logDebuggerMessage(message) {
+            debuggerOutput.innerHTML += message + "<br/>";
+            debuggerOutput.scrollTop = debuggerOutput.scrollHeight; // Scroll to the bottom
+        }
+
+        // Log errors to debugger
+        function logDebuggerError(error) {
+            debuggerOutput.innerHTML += "Error: " + error.message + "<br/>";
+            debuggerOutput.scrollTop = debuggerOutput.scrollHeight; // Scroll to the bottom
+        }
+    </script>
+</body>
+</html>
