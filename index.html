@@ -3,60 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Page</title>
+    <title>Command Line Interface</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 0;
+            font-family: monospace;
+            background-color: #1e1e1e; /* Dark background */
+            color: #ffffff; /* Light text */
             padding: 20px;
         }
-        canvas {
-            border: 1px solid black;
-            margin: 20px auto;
-            display: block;
-        }
-        #log {
-            white-space: pre-wrap; /* Keeps line breaks */
-            margin-top: 10px;
-            border: 1px solid #ccc;
+        #commandLine {
+            background: #282c34; /* Darker background for command line */
+            border: 1px solid #444; /* Darker border */
             padding: 10px;
-            background-color: #f9f9f9;
+            width: 600px; /* Fixed width */
+            height: 400px; /* Fixed height */
+            overflow-y: auto; /* Scrollable area */
+        }
+        #input {
+            border: none;
+            outline: none;
+            width: 100%;
+            background: transparent; /* Transparent input */
+            color: #ffffff; /* Light text */
+        }
+        .menu-option {
+            color: #569cd6; /* Option color */
         }
     </style>
 </head>
 <body>
-    <h1 id="header">Testing</h1>
-    <canvas id="canvas" width="400" height="400"></canvas>
-    <button type="button" onclick="changeHeaderText()">Click Me!</button>
-    <div id="log">Debug logs:</div>
-    
+    <div id="commandLine">
+        <p>Welcome to your CLI! Type a command:</p>
+        <p class="menu-option">1. Games</p>
+        <p class="menu-option">2. Settings</p>
+        <p class="menu-option">3. HTML Editor</p>
+        <p id="output"></p> <!-- Output area -->
+        <input id="input" type="text" placeholder="Type your command here..." autofocus />
+    </div>
+
     <script>
-        // Function to change header text
-        function changeHeaderText() {
-            const header = document.getElementById('header');
-            header.innerText = "It's weak to brains!";
-            logEvent("Header changed to: " + header.innerText);
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+
+        // Function to handle user input
+        function handleInput(event) {
+            if (event.key === 'Enter') {
+                const command = input.value.toLowerCase();
+                output.innerHTML += `<div>${command}</div>`; // Echo the command
+                input.value = ''; // Clear input
+
+                switch (command) {
+                    case '1':
+                    case 'games':
+                        output.innerHTML += '<div>Loading Games...</div>';
+                        // Add functionality to load games here
+                        break;
+                    case '2':
+                    case 'settings':
+                        output.innerHTML += '<div>Opening Settings...</div>';
+                        // Add functionality to open settings here
+                        break;
+                    case '3':
+                    case 'html editor':
+                        output.innerHTML += '<div>Opening HTML Editor...</div>';
+                        // Add functionality to open the HTML editor here
+                        break;
+                    default:
+                        output.innerHTML += '<div>Unknown command. Try again.</div>';
+                }
+                // Auto-scroll to the bottom
+                output.scrollTop = output.scrollHeight;
+            }
         }
 
-        // Function to log events
-        function logEvent(message) {
-            const log = document.getElementById('log');
-            log.innerText += message + "\n"; // Append the message with a newline
-        }
-
-        // Draw on the canvas
-        function drawCanvas() {
-            const canv = document.getElementById("canvas");
-            const ctx = canv.getContext("2d");
-            ctx.fillStyle = "lightblue";
-            ctx.fillRect(50, 50, 300, 300);
-            logEvent("Canvas drawn.");
-        }
-
-        // Initial alert and canvas drawing
-        alert("GitHub works well, Arisen!");
-        drawCanvas();
+        // Event listener for input
+        input.addEventListener('keydown', handleInput);
     </script>
 </body>
 </html>
