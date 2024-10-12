@@ -1,16 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        canvas {
+            border: 1px solid black;
+            margin: 20px auto;
+            display: block;
+        }
+        #log {
+            white-space: pre-wrap; /* Keeps line breaks */
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
 <body>
-<h1 id="awd">Testing</h1> <!-- Fixed the id closing quotation mark -->
-  <canvas id="canvas"></canvas>
-  <button type="button" onclick="document.getElementById('awd').innerText = 'It's weak to brains!'">button</button> <!-- Changed 'awe' to 'awd' since the h1 id is 'awd' -->
-<script>
-alert("Github works well, Arisen!")
-  const canv = document.getElementById("canvas")
-  const ctx = canv.getContext("2d") <!-- Added 'const' for ctx -->
-  canv.width = 400  
-  canv.height = 400
-  ctx.fillRect(0, 0, canv.width, canv.height)
-</script>
+    <h1 id="header">Testing</h1>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <button type="button" onclick="changeHeaderText()">Click Me!</button>
+    <div id="log">Debug logs:</div>
+    
+    <script>
+        // Function to change header text
+        function changeHeaderText() {
+            const header = document.getElementById('header');
+            header.innerText = "It's weak to brains!";
+            logEvent("Header changed to: " + header.innerText);
+        }
+
+        // Function to log events
+        function logEvent(message) {
+            const log = document.getElementById('log');
+            log.innerText += message + "\n"; // Append the message with a newline
+        }
+
+        // Draw on the canvas
+        function drawCanvas() {
+            const canv = document.getElementById("canvas");
+            const ctx = canv.getContext("2d");
+            ctx.fillStyle = "lightblue";
+            ctx.fillRect(50, 50, 300, 300);
+            logEvent("Canvas drawn.");
+        }
+
+        // Initial alert and canvas drawing
+        alert("GitHub works well, Arisen!");
+        drawCanvas();
+    </script>
 </body>
 </html>
