@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command Line Interface</title>
+    <title>Angry Janitor Studios</title>
     <style>
         body {
             font-family: monospace;
@@ -33,9 +33,9 @@
 </head>
 <body>
     <div id="commandLine">
-        <p>Welcome to your CLI! Type a command:</p>
+        <p>Welcome to the AJS website! Type a command:</p>
         <p class="menu-option">1. Games</p>
-        <p class="menu-option">2. Settings</p>
+        <p class="menu-option">2. Extras</p>
         <p class="menu-option">3. HTML Editor</p>
         <p id="output"></p> <!-- Output area -->
         <input id="input" type="text" placeholder="Type your command here..." autofocus />
@@ -60,7 +60,7 @@
                         break;
                     case '2':
                     case 'settings':
-                        output.innerHTML += '<div>Opening Settings...</div>';
+                        output.innerHTML += '<div>(Extras Coming Soon!)</div>';
                         // Add functionality to open settings here
                         break;
                     case '3':
