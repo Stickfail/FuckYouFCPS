@@ -48,7 +48,7 @@
 
 <body>
     <div id="commandLine">
-        <p>Cool website for AJS. Includes a shitty html editor, and my games. Type in a command:</p>
+        <p id="title">Cool website for AJS. Includes a shitty html editor, and my games. Type in a command:</p>
         <div id="options">
             <p class="menu-option">1. Games</p>
             <p class="menu-option">2. Extras</p>
@@ -135,6 +135,7 @@
                 var menuOptions = document.getElementById("options")
                 menuOptions.innerHTML = ""
                 output.innerHTML = ""
+                document.getElementById("title").innerText = "Games"
 
                 for (let g = 0; g < 5; g++) {
                     let game = document.createElement("p");
