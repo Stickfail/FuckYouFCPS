@@ -77,6 +77,30 @@
             }
         }
 
+        function displayGames(){
+            output.innerHTML = "" //cls
+            output.innerHTML += "Displaying games..."
+            //cool animation for it because why not?
+            for(let g=1;g<4;g++){
+                switch(g){
+                    case 1:
+                        output.innerHTML += "Snek"
+                        break;
+                    case 2:
+                        output.innerHTML += "Pong"
+                        break;
+                    case 3:
+                        output.innerHTML += "Platformer (pre-graphics version)"
+                        break;
+                    case 4:
+                        output.innerHTML += "Sorting algorithm thing"
+                        break;
+                }
+            }
+
+            
+        }
+
         // Event listener for input
         input.addEventListener('keydown', handleInput);
     </script>
