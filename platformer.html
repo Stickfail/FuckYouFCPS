@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Platformer</title>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <canvas id="canvas" width="1400" height="700"></canvas>
+        <p id="con" style="display:none;">no</p>
+    </div>
+    <script>
+        const canv = document.getElementById("canvas");
+        const ctx = canv.getContext("2d");
+
+        const con = document.getElementById("con"); //My console, because the school issued laptops can't run a normal one.
+
+        // Custom Colors
+        const bg = ctx.createRadialGradient(canv.width / 2, canv.height, 100, canv.width / 2, 500, 1000);
+        bg.addColorStop(0, "yellow");
+        bg.addColorStop(0.2, "orange");
+        bg.addColorStop(1, "red");
+
+
+
+        // Variables
+        //player variables
+        var p = {
+            x: 100,
+            y: canv.height - 140,
+            width: 30,
+            height: 40,
+            vx: 0,
+            vy: 0,
+            sx: this.x,
+            sy: this.y,
+            drift: 2,
+            speed: 8,
+            grav: 0.25,
+            jump: 0,
+            jtime: Date.now(),
+            canMove: 1,
+            dir: 0,
+            dcd: Date.now()
+        };
+        var dash = 0
+
+        var end = {
+            x: 0,
+            y: 0,
+        }
+
+        var lvl
+
+        var platform = [
+        ];
+        function plat(x, y, w, h, t) {
+            platform.push(new Platform(x, y, w, h, t));
+        }
+        function mplat(sx, sy, ex, ey, w, h) {
+            platform.push(new mPlatform(sx, sy, ex, ey, w, h));
+        }
+        class Platform {
+            constructor(x, y, w, h, t) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.t = t;
+            }
+        }
+        class mPlatform {
+            constructor(sx, sy, ex, ey, w, h) {
+                this.sx = sx;
+                this.sy = sy;
+                this.ex = ex;
+                this.ey = ey;
+                this.w = w;
+                this.h = h;
+
+                this.x = sx
+                this.y = sy
+
+                this.d = 1
+                this.t = 'm'
+            }
+        }
+
+        //this just sets positions and loads the levels
+        function level(sx, sy, ex, ey, l) { //Procedure. More than 2 meaningful parameters
+            p.canMove = 0
+            p.vx = 0
+            p.vy = 0
+
+            p.x = sx
+            p.y = sy;
+
+            end.x = ex;
+            end.y = ey;
+
+            lvl = l
+
+            platform = []
+
+            lvlInit()
+            setTimeout(() => {
+                p.canMove = 1
+            }, 1000)
+        }
+        window.onload = function () {
+            level(100, canv.height - 180, canv.width - 100, 10, 1)
+        }
+
+        //tracks what keys are down
+        const keys = {};
+
+        function onKeyDown(event) {
+            keys[event.key] = true;
+            if (event.key == 'ArrowUp' || event.key == 'ArrowDown' || event.key == ' ') {
+                event.preventDefault();
+            }
+        }
+
+        function onKeyUp(event) {
+            keys[event.key] = false;
+        }
+
+        document.addEventListener("keydown", onKeyDown);
+        document.addEventListener("keyup", onKeyUp);
+
+        var scrolling = 0
+        var cy = 0
+        var cx = 0
+
+        function isColliding(player, platform) {
+            const colliding = (
+                player.x < platform.x + platform.w &&
+                player.x + player.width > platform.x &&
+                player.y < platform.y + platform.h &&
+                player.y + player.height > platform.y
+            );
+
+            return colliding;
+        }
+        var startTime;
+        var stopwatchInterval;
+        var elapsedPausedTime = 0;
+
+        //the speedrun timer, because why not?
+        function startStopwatch() {
+            if (!stopwatchInterval) {
+                startTime = new Date().getTime() - elapsedPausedTime;
+                stopwatchInterval = setInterval(updateStopwatch, 1);
+            }
+        }
+
+        function stopStopwatch() {
+            clearInterval(stopwatchInterval);
+            elapsedPausedTime = new Date().getTime() - startTime;
+            stopwatchInterval = null;
+        }
+
+        function resetStopwatch() {
+            stopStopwatch();
+            elapsedPausedTime = 0;
+        }
+        var scoring = false
+        function updateStopwatch() {
+            var currentTime = new Date().getTime();
+            var elapsedTime = currentTime - startTime;
+            var milliseconds = elapsedTime % 1000;
+            var seconds = Math.floor(elapsedTime / 1000) % 60;
+            var minutes = Math.floor(elapsedTime / 1000 / 60) % 60;
+            var hours = Math.floor(elapsedTime / 1000 / 60 / 60);
+            var displayTime = pad(hours) + ":" + pad(minutes) + ":" + pad(seconds) + "." + pad(milliseconds, 3);
+            con.innerText = displayTime;
+        }
+
+        function pad(number) {
+            return (number < 10 ? "0" : "") + number; //Credit of w3Schools
+        }
+
+        scrollX = scrollY = 0
+
+        function scroll(x, y) {
+            scrollX = x
+            scrollY = y
+        }
+
+        //draws all visuals
+        function draw() {
+            // Clear the canvas
+            ctx.clearRect(0, 0, canv.width, canv.height);
+            // Background
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canv.width, canv.height);
+
+            // Foreground
+            for (let i = 0; i < platform.length; i++) {
+                if (platform[i].t == 'p') {
+                    ctx.fillStyle = "green";
+                    ctx.fillRect(platform[i].x, platform[i].y, platform[i].w, platform[i].h);
+                } else if (platform[i].t == 'c' || platform[i].t == 'falling') {
+                    ctx.fillStyle = "grey";
+                    ctx.fillRect(platform[i].x, platform[i].y, platform[i].w, platform[i].h);
+                } else if (platform[i].t == 'd') {
+                    ctx.beginPath()
+                    ctx.moveTo(platform[i].x + platform[i].w / 2, platform[i].y)
+                    ctx.lineTo(platform[i].x, platform[i].y + platform[i].h)
+                    ctx.lineTo(platform[i].x + platform[i].w, platform[i].y + platform[i].h)
+                    ctx.closePath()
+                    ctx.lineWidth = 10
+                    ctx.strokeStyle = "maroon"
+                    ctx.stroke()
+                    ctx.fillStyle = "maroon"
+                    ctx.fill()
+                } else if (platform[i].t == 'ud') {
+                    ctx.beginPath()
+                    ctx.moveTo(platform[i].x + platform[i].w / 2, platform[i].y)
+                    ctx.lineTo(platform[i].x, platform[i].y - platform[i].h)
+                    ctx.lineTo(platform[i].x + platform[i].w, platform[i].y - platform[i].h)
+                    ctx.closePath()
+                    ctx.lineWidth = 10
+                    ctx.strokeStyle = "maroon"
+                    ctx.stroke()
+                    ctx.fillStyle = "maroon"
+                    ctx.fill()
+                } else if (platform[i].t == 'm') {
+                    platform[i].sx += cx
+                    platform[i].ex += cx
+                    platform[i].sy += cy
+                    platform[i].ey += cy
+                    ctx.fillStyle = "green"
+                    ctx.fillRect(platform[i].x, platform[i].y, platform[i].w, platform[i].h)
+                } else if (platform[i].t == 'drop') {
+                    ctx.fillStyle = "grey"
+                    ctx.fillRect(platform[i].x, platform[i].y, platform[i].w, platform[i].h)
+                } else if (platform[i].t == 'dropping') {
+                    ctx.fillStyle = "maroon"
+                    ctx.fillRect(platform[i].x, platform[i].y, platform[i].w, platform[i].h)
+                }
+            }
+
+            if (timerShow) {
+                ctx.fillStyle = "black"
+                ctx.font = "20px Arial"
+                ctx.fillText(con.innerText, canv.width / 2 - 100, 50)
+            }
+
+            // Assets
+            ctx.fillStyle = "blue"
+            ctx.fillRect(p.x, p.y, p.width, p.height)
+            //Ending
+            ctx.fillStyle = "yellow"
+            ctx.fillRect(end.x, end.y, 40, 80)
+            if (p.x < end.x + 40 && p.x + 30 > end.x && p.y < end.y + 80 && p.y + 40 > end.y) {
+                level(0, 0, 100, 100, lvl + 1)
+            }
+        }
+
+        var center = { x: cx, y: cy }
+        var timerShow = false
+        //handle player input and interactions
+        function input() { //Algorithm.
+            try {
+                var scrolling = 0
+                if (keys["a"] && p.canMove == 1 || keys["ArrowLeft"] && p.canMove == 1) {
+                    if (scrollX == 0) {
+                        p.vx = -p.speed * 2 * 0.6;
+                    } else {
+                        p.vx = -p.speed;
+                    }
+                } else if (keys["d"] && p.canMove == 1 || keys["ArrowRight"] && p.canMove == 1) {
+                    if (scrollX == 0) {
+                        p.vx = p.speed * 2 * 0.6;
+                    } else {
+                        p.vx = p.speed;
+                    }
+                } else {
+                    p.vx = 0;
+                }
+
+                if (keys["h"]) {
+                    timerShow = true
+                }
+                // Jumping controls
+                if (keys["w"] && p.jump === 0 && p.canMove == 1 || keys["ArrowUp"] && p.canMove == 1 && p.jump === 0) {
+                    p.jump = 1;
+                    if (dash == 0) {
+                        if (scrollY != 0) {
+                            p.vy = -8;
+                        } else {
+                            p.vy = -10
+                        }
+                    }
+                }
+                if (keys["w"] && p.jump == 1 && Date.now() - p.jtime < 150 && p.vy > 0 ||
+                    keys["ArrowUp"] && p.jump == 1 && Date.now() - p.jtime < 150 && p.vy > 0) {
+                    p.jtime = Date.now()
+                    p.jump = 2
+                    if (scrollY != 0) {
+                        p.vy = -8;
+                    } else {
+                        p.vy = -10
+                    }
+                }
+
+                if (p.jump >= 1) {
+                    p.vy += p.grav
+                }
+
+                if (keys[" "]) {
+                    let dashPos = playerDash(p.x, p.vx, p.y, p.vy, 15)
+                    p.x = dashPos[0]
+                    p.vx = dashPos[1]
+                    p.y = dashPos[2]
+                    p.vy = dashPos[3]
+                }
+
+                cx = 0
+
+                const newX = (lvl === 8) ? p.x + p.vx / 1.2 : p.x + p.vx
+                const newY = p.y + p.vy;
+
+                // Check for collision at the new position
+                let collision = false;
+
+                //Horizontal Collision
+                var it = 0;
+                var mIt = 1000;
+                var platformCollision = false;
+                var newCX = cx;
+
+                for (let i = 0; i < platform.length; i++) {
+                    if (isColliding({ x: newX, y: p.y, width: p.width, height: p.height }, platform[i])) {
+                        platformCollision = true;
+                        collision = true;
+                        if (scrollX !== 0) {
+                            if (p.vx < 0) {
+                                const adjust = p.vx > 0 ? -p.vx / 2 : p.vx / 2;
+                                while (isColliding({ x: p.x + adjust, y: p.y, width: p.width, height: p.height }, platform[i]) && it < mIt) {
+                                    collision = true;
+                                    p.x += 0;
+                                    it++;
+                                }
+                                newCX = Math.max(cx + adjust, 0);
+                            } else if (p.vx > 0) {
+                                while (p.x + p.vx / 2 + p.width >= platform[i].x && it < mIt & p.y + 40 < platform[i].y) {
+                                    collision = true;
+                                    p.x -= 1;
+                                    it++;
+                                    newCX = Math.max(cx - p.vx / 2, 0);
+                                }
+                            }
+                        }
+
+                        if (platform[i].t == 'd' || platform[i].t == 'ud') {
+                            setTimeout(() => { level(0, 0, 100, 100, lvl) }, 0)
+                        }
+                        if (platform[i].t == 'dropping') {
+                            level(0, 0, 1000, 1000, lvl)
+                        }
+                        break;
+                    }
+                }
+
+                it = 0;
+
+                if (!collision) {
+                    if (scrollX == 0) {
+                        p.x = newX;
+                    } else if (scrollX == 1) {
+                        p.x = newX
+                        cx = -p.vx / 2
+                    } else {
+                        cx -= p.vx
+                    }
+                } else {
+                    cx = newCX;
+                }
+
+                // Vertical collision (top and bottom)
+                collision = false;
+                for (let i = 0; i < platform.length; i++) {
+                    if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                        collision = true;
+                        if (p.y + p.height > platform[i].y) {
+                            p.y -= 0
+                            if (p.y + p.height > platform[i].y) {
+                                for (var a = 0; a < platform.length; a++) {
+                                    platform[a].y += 0
+                                }
+                            }
+
+                        }
+
+                        // Check if it's a bottom collision, and reset p.jump
+                        if (p.vy > 0) {
+                            p.jump = 0
+                            p.vy = 0
+                            p.jtime = Date.now()
+                            dash = 0
+                            p.dcd = Date.now()
+                            while (p.y + p.height > platform[i].y && p.y < platform[i].y) {
+                                p.y -= 1
+                            }
+
+                            if (platform[i].t == 'dropping') {
+                                level(0, 0, 1000, 1000, lvl)
+                            }
+                            //Collapsing platform Logic
+                            if (platform[i].t == 'c') {
+                                setTimeout(() => {
+                                    platform[i].t = 'falling'
+                                    platform[i].y += 10
+                                }, 100)
+                            }
+                        }
+
+                        if (platform[i].t == 'd' || platform[i].t == 'ud') {
+                            setTimeout(() => { level(0, 0, 100, 100, lvl) }, 0)
+                        }
+
+                        if (p.vy < 0) {
+                            p.vy = 0
+                            p.jump = 1
+                            while (p.y < platform[i].y + platform[i].height && p.y > platform[i].y) {
+                                p.y += 1
+                            }
+                        }
+
+                        break;
+                    }
+
+                    if (platform[i].t == 'drop') {
+                        if (p.x > platform[i].x && p.x < platform[i].x + platform[i].w) {
+                            setTimeout(() => { platform[i].t = 'dropping' }, 100)
+                        }
+                    }
+
+                    if (platform[i].t == 'dropping') {
+                        platform[i].y += 10
+                    }
+
+                    if (platform[i].t == 'falling') {
+                        platform[i].y += 10
+                    }
+                    if (platform[i].t == 'm') {
+                        var di
+                        if (platform[i].d == 1) {
+                            if (platform[i].x < platform[i].ex) {
+                                di = 1
+                                platform[i].x += 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vx = 4
+                                }
+                            } else if (platform[i].x > platform[i].ex) {
+                                di = 0
+                                platform[i].x -= 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vx = -4
+                                }
+                            }
+                            if (platform[i].y < platform[i].ey) {
+                                di = 1
+                                platform[i].y += 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vy = 4
+                                }
+                            } else if (platform[i].y > platform[i].ey) {
+                                di = 0
+                                platform[i].y -= 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vy = -4
+                                }
+                            }
+
+                            if (Math.abs(platform[i].ex - platform[i].x) <= 1 && Math.abs(platform[i].ey - platform[i].y) <= 1) {
+                                platform[i].d = 0
+                            }
+                        } else {
+                            if (platform[i].x < platform[i].sx) {
+                                platform[i].x += 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vx = 4
+                                }
+                            } else if (platform[i].x > platform[i].sx) {
+                                platform[i].x -= 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vx = -4
+                                }
+                            }
+                            if (platform[i].y < platform[i].sy) {
+                                platform[i].y += 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vy = 4
+                                }
+                            } else if (platform[i].y > platform[i].sy) {
+                                platform[i].y -= 4
+                                if (isColliding({ x: p.x, y: newY, width: p.width, height: p.height }, platform[i])) {
+                                    p.vy = -4
+                                }
+                            }
+
+                            if (Math.abs(platform[i].sx - platform[i].x) <= 1 && Math.abs(platform[i].sy - platform[i].y) <= 1) {
+                                platform[i].d = 1
+                            }
+                        }
+                    }
+
+                    if (p.y + p.height + 2 >= platform[i].y) {
+                        p.jump = 1
+                        collision = false
+                    }
+                }
+                cy = 0
+                if (scrollY == 1) {
+                    cy -= p.vy
+                } else if (scrollY == 2) {
+                    cy -= p.vy
+                }
+                end.y += cy
+                end.x += cx
+                if (!collision) {
+                    if (scrollY != 2) {
+                        p.y = newY;
+                    } else {
+                        cy = newY
+                    }
+
+                    if (p.y >= canv.height + 1000) {
+                        level(0, 0, 100, 100, lvl)
+                    }
+                }
+                requestAnimationFrame(update)
+            } catch (err) {
+                alert(err.stack)
+            }
+        }
+        function playerDash(x, vx, y, vy, strength) { //annoying procedure thing
+            for (i = 0; i < strength; i++) {
+                if (vx > 1) {
+                    x += 2
+                } else if (vx < -1) {
+                    x -= 2
+                }
+
+                if (vy > 1) {
+                    y -= 2
+                } else if (vy < -1) {
+                    y += 2
+                }
+            }
+            vx = 0
+            vy = 0
+            return ([x, vx, y, vy])
+        }
+
+        //update platform positions for scrolling, call the other fat functions
+        function update() {
+            for (var i = 0; i < platform.length; i++) {
+                platform[i].y += cy
+                platform[i].x += cx
+            }
+            input();
+            draw()
+        }
+        update();
+        draw()
+
+        //l1.js
+        var played = false
+        //just adds the platform positions to a huge list
+        function lvlInit() {
+            plat(0, -1000, 0, 0, 'p')
+            p.vy = 0
+            p.vx = 0
+            scroll(0, 0)
+
+            const xmid = canv.width / 2
+            const ymid = canv.height / 2
+            switch (lvl) {
+                case 1:
+                    scroll(0, 0)
+                    if (played == false) {
+                        resetStopwatch()
+                        startStopwatch()
+                    } else {
+                        stopStopwatch()
+                    }
+                    cy = 0
+
+                    p.x = 100
+                    p.y = canv.height - 180
+
+                    end.x = canv.width - 100
+                    end.y = 10
+
+                    plat(20, canv.height - 40, canv.width - 800, 40, 'p')
+                    plat(canv.width - 400, canv.height - 120, 200, 60, 'p')
+
+                    plat(0, canv.height / 2 + 50, canv.width / 3 * 2, 40, 'p')
+
+                    plat(600, 225, 80, 20, 'p')
+
+                    plat(0, 125, 500, 40, 'p')
+                    plat(500 + 280, 125, canv.width, 40, 'p')
+
+                    plat(0, -1, 0, -1, 'p')
+                    break;
+                case 2:
+                    scroll(0, 1)
+                    plat(0, canv.height - 40, 80, 40, 'p')
+
+                    for (var i = 1; i < 10; i++) {
+                        plat(300 + (i * 41), canv.height - 80, 40, 40, 'c')
+                    }
+                    plat(canv.width - (9 * 41) + 100, 500, 120, 40, 'p')
+
+                    for (var i = 0; i < 11; i++) {
+                        plat(650 - (i * 41), 350, 40, 40, 'c')
+                    }
+                    plat(0, 200, 80, 40, 'c')
+
+                    plat(200, 0, canv.width, 40, 'p')
+
+                    plat(0, 0, 0, 0, 'p')
+
+                    end.x = canv.width - 100
+                    end.y = -100
+
+                    p.y = canv.height - 160
+                    p.x = 20
+                    break;
+                case 3:
+                    scroll(1, 0)
+                    plat(-100, canv.height - 40, 220, 40, 'p')
+                    plat(800, canv.height - 100, 120, 40, 'p')
+                    plat(1200, canv.height - 200, 120, 40, 'p')
+                    plat(1600, canv.height - 320, 120, 40, 'c')
+
+                    plat(1400, canv.height - 420, 120, 40, 'p')
+
+                    plat(600, canv.height - 420, 120, 40, 'c')
+
+                    p.x = 5
+                    p.y = canv.height - 200
+
+                    end.x = 100
+                    end.y = 50
+                    break;
+                case 4:
+                    scroll(0, 1)
+                    plat(0, 100, 600, 40, 'p')
+                    plat(350, 400, 50, 50, 'd')
+                    plat(100, 450, 600, 40, 'p')
+                    plat(250, 750, 50, 50, 'd')
+                    plat(450, 750, 50, 50, 'd')
+                    plat(0, 450 + 350, 600, 40, 'p')
+
+
+                    //Divider
+                    plat(canv.width / 2, -200, 20, canv.height, 'p')
+
+                    plat(xmid + 100, canv.height - 100, 80, 20, 'c')
+                    plat(canv.width - 100, canv.height - 200, 80, 20, 'c')
+                    plat(xmid + 150, ymid - 50, 80, 20, 'c')
+                    plat(canv.width - 150, ymid - 150, 80, 20, 'c')
+
+
+                    p.x = 5
+                    p.y = 50
+                    end.x = canv.width - 50
+                    end.y = 50
+                    break;
+                case 5:
+                    scroll(2, 1)
+                    plat(xmid - 200, canv.height - 200, 400, 40, 'p')
+                    plat(canv.width - 100, canv.height - 300, 100, 40, 'p')
+
+                    for (var i = 0; i < 15; i++) {
+                        plat(canv.width + 120 + (41 * i), canv.height - 200, 40, 40, 'c')
+                    }
+                    for (var i = 0; i < 10; i++) {
+                        plat(canv.width + 705 - (41 * i), canv.height - 500, 40, 40, 'c')
+                    }
+                    plat(canv.width + 800, canv.height - 350, 150, 40, 'p')
+
+                    plat(canv.width - 100, 0, 100, 40, 'p')
+                    plat(canv.width - 0, 0, 40, 180, 'p')
+                    plat(canv.width - 400, 140, 400, 40, 'p')
+
+                    p.x = xmid - 200
+                    p.sx = p.x
+                    p.y = canv.height - 230
+                    p.sy = p.y
+                    end.x = canv.width - 50
+                    end.y = 50
+                    break;
+                case 6:
+                    scroll(0, 0)
+                    plat(0, 400, 100, 40, 'p')
+
+                    for (var i = 0; i < 9; i++) {
+                        plat(450 + (40 * i), 140, 40, 40, 'ud')
+                        plat(450 + (40 * i), canv.height - 30, 30, 30, 'd')
+                    }
+
+                    plat(400, 0, 100, 200, 'p')
+                    plat(400, 400, 100, 500, 'p')
+                    plat(800, 0, 100, 200, 'p')
+                    plat(800, 400, 100, 500, 'p')
+
+                    plat(400, 0, 400, 100, 'p')
+
+                    mplat(600, 100, 600, 600, 100, 40)
+
+                    plat(1000, 400, 100, 40, 'c')
+
+                    p.x = 5
+                    p.y = 300
+                    end.x = canv.width - 50
+                    end.y = 150
+                    break;
+                case 7:
+                    scroll(2, 0)
+                    //Our level
+                    plat(xmid - 200, 500, 800, 400, 'p')
+                    plat(xmid + 600, 450, 100, 450, 'p')
+                    plat(xmid + 700, 450, 50, 150, 'p')
+                    plat(0, 550, xmid - 200, 400, 'p')
+
+                    plat(canv.width + 220, 550, 105, 40, 'p')
+                    plat(canv.width + 325, 550, 25, 20, 'p')
+                    plat(canv.width + 210 + (150 / 2), 580, 40, 200, 'p')
+
+                    plat(canv.width + 220, 200, 80, 40, 'p')
+
+                    plat(canv.width + 500, 500, 105, 40, 'p')
+                    plat(canv.width + 475, 500, 25, 20, 'p')
+                    plat(canv.width + 425 + (150 / 2), 530, 60, 200, 'p')
+
+                    //Falling Block
+                    plat(canv.width + 475, 190, 130, 80, 'drop')
+                    //Structure
+                    plat(canv.width + 475, 190 - 48, 130, 50, 'p')
+                    plat(canv.width + 450, 167 - 100, 155, 100, 'p')
+                    plat(canv.width + 350, 67 - 100, 275, 150, 'p')
+
+                    plat(canv.width + 800, 550, 100, 40, 'p')
+                    plat(canv.width + 860, 550, 40, 400, 'p')
+                    plat(canv.width + 900, 450, 40, 140, 'p')
+
+                    plat(canv.width + 1100, 550, 600, 400, 'p')
+
+                    plat(canv.width + 1950, 525, 200, 50, 'p')
+                    plat(canv.width + 1975, 550, 175, 50, 'p')
+                    plat(canv.width + 2000, 600, 125, 500, 'p')
+                    plat(canv.width + 2070, 375, 80, 150, 'p')
+                    plat(canv.width + 2070 + 80, 375, 25, 100, 'p')
+
+                    plat(canv.width + 2300, 500, 100, 40, 'p')
+                    plat(canv.width + 2325, 500, 50, 300, 'p')
+                    plat(canv.width + 2325, 540, 75, 20, 'p')
+
+                    plat(canv.width + 2525, 350, 40, 200, 'p')
+                    plat(canv.width + 2565, 450, 40, 225, 'p')
+                    plat(canv.width + 2605, 500, 100, 400, 'p')
+
+                    plat(canv.width + 2900, 650, 100, 100, 'p')
+                    plat(canv.width + 3000, 625, 50, 125, 'p')
+                    plat(canv.width + 3050, 575, 150, 200, 'p')
+
+                    plat(canv.width + 2950, 100, 50, 300, 'p')
+                    plat(canv.width + 3000, 100, 20, 200, 'p')
+
+                    plat(canv.width + 3400, 500, 50, 200, 'p')
+                    plat(canv.width + 3450, 350, 400, 500, 'p')
+
+                    p.x = xmid - 175
+                    p.sx = p.x
+                    p.y = canv.height - 300
+                    p.sy = p.y
+                    end.x = canv.width + 3450 + 200
+                    end.y = 200
+                    played = true
+                    break;
+                default:
+                    lvl = 1
+                    lvlInit()
+            }
+        }
+    </script>
+</body>
+
+</html>

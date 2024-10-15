@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Pong</title>
+</head>
+
+<body>
+    <div style="text-align: center;">
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <p id="con"></p>
+    </div>
+
+    <div>
+        <label for="LColor">Decorative line color(All lowercase, one word only. Default:darkblue):</label><br>
+        <input type="text" id="LColor" name="LColor"><br>
+        <label for="LColor">Base Size(Default: 70):</label><br>
+        <input type="text" id="size" name="size"><br>
+        <label for="LColor">Game Mode(Modes: normal, shrinking):</label><br>
+        <input type="text" id="gmode" name="gmode"><br>
+        <input type="submit" value="Change Things" onclick="change()" style="background-color: white;"><br>
+    </div>
+    <script>
+
+        //Things to add:
+        // make space invaders
+        //just make every arcade game
+
+        canv = document.getElementById("canvas")
+        ctx = canv.getContext("2d")
+
+        con = document.getElementById("con")
+
+        //Variables
+        var p1x = 20
+        var p2x = canvas.width - 20
+        var p1y = p2y = canvas.height / 3
+        var bx = by = 0
+        var bx = canvas.width / 2 - 10
+        var by = canvas.height / 2 - 10
+        var bvx = bvy = 0
+        var p1Score = p2Score = 0
+        var pMovementSpd = 10
+        var ballMoving = 0
+        var menu = true;
+        var numPlayers = 1;
+        var ballSpd = 5
+        const keys = {};
+        var Color = "darkblue"
+        var pBase = 70
+        var pSize = { p1: pBase, p2: pBase }
+
+        var maxPoints = 7
+
+        var mode = "normal"
+
+        var gameStartTime = Date.now();
+        var suddenDeathThreshold = 1000;
+
+
+        //Functions
+        function onKeyDown(event) {
+            keys[event.key] = true;
+            if (event.key == 'ArrowUp' || event.key == 'ArrowDown') {
+                event.preventDefault()
+            }
+
+            if (event.key)
+
+                if (menu) {
+                    if (event.key === '1' || event.key === '2' || event.key === '0') {
+                        numPlayers = parseInt(event.key);
+                        menu = false;
+                        startRound();
+                    }
+                }
+        }
+
+        function onKeyUp(event) {
+            keys[event.key] = false;
+        }
+
+        document.addEventListener("keydown", onKeyDown);
+        document.addEventListener("keyup", onKeyUp);
+        function game(players) {
+            var currentTime = Date.now();
+            var elapsedTime = currentTime - gameStartTime;
+
+            if (elapsedTime >= suddenDeathThreshold) {
+                //suddenDeath()
+            }
+
+            players = numPlayers
+            //clear
+            ctx.fillStyle = "black"
+            ctx.fillRect(0, 0, canvas.width, canvas.height)
+            //MENU
+            if (menu) {
+                // Display menu
+
+                //Background details
+                ctx.fillStyle = Color
+                ctx.fillRect(0, 0, 20, canv.height)
+                ctx.fillRect(canv.width - 20, 0, 20, canv.height)
+
+                //UI
+
+                ctx.fillStyle = "white";
+                ctx.font = "bold 48px Arial";
+                ctx.fillText("Pong", canv.width / 2 - 100, 100);
+                ctx.font = "26px Arial";
+                ctx.fillText("Press 1 for 1 Player", canv.width / 2 - 150, 400);
+                ctx.fillText("Press 2 for 2 Players", canv.width / 2 - 150, 450);
+            } else {
+
+                //Draw Decor
+                ctx.strokeStyle = Color
+                ctx.lineWidth = 6
+                ctx.strokeRect(canvas.width / 2 - 10, 0 - 10, 20, canvas.height + 20)
+
+                //Score
+                ctx.fillStyle = "grey"
+                ctx.font = "bold 64px Arial"
+                ctx.fillText(p1Score, 150, 100,)
+                ctx.fillText(p2Score, canvas.width - 150, 100)
+
+                //drawPlayer
+                ctx.fillStyle = "white"
+                ctx.fillRect(p1x, p1y, 10, pSize.p1)
+
+                ctx.fillRect(p2x, p2y, 10, pSize.p2)
+                if (players == 2) {
+                    if (keys["ArrowUp"] || keys["o"]) {
+                        if (p2y - 20 > 0 - 10) {
+                            p2y -= pMovementSpd
+                        }
+                    }
+                    if (keys["ArrowDown"] || keys["l"]) {
+                        if (p2y + pSize.p2 - 35 < canvas.height - 50) {
+                            p2y += pMovementSpd
+                        }
+                    }
+                }
+                if (players == 1) {
+                    if (keys["w"] || keys["ArrowUp"] || keys["o"]) {
+                        if (p1y - 20 > 0 - 10) {
+                            p1y -= pMovementSpd
+                        }
+                    }
+                    if (keys["s"] || keys["ArrowDown"] || keys["l"]) {
+                        if (p1y + pSize.p1 - 35 < canvas.height - 50) {
+                            p1y += pMovementSpd
+                        }
+                    }
+                } else {
+                    if (keys["w"]) {
+                        if (p1y - 20 > 0 - 10) {
+                            p1y -= pMovementSpd
+                        }
+                    }
+                    if (keys["s"]) {
+                        if (p1y + pSize.p1 - 35 < canvas.height - 50) {
+                            p1y += pMovementSpd
+                        }
+                    }
+                }
+                singleAI(players)
+
+
+                //ball
+                ctx.fillStyle = "white"
+                ctx.fillRect(bx, by, 20, 20)
+                if (ballMoving) {
+
+                    bx += bvx
+                    by += bvy
+                }
+                if (by <= 0 || by >= canvas.height - 20) {
+                    bvy = -bvy;
+                }
+                //p1 collision
+                if (
+                    bx <= p1x + 10 && //If touching right side of paddle
+                    by + 20 >= p1y &&
+                    by <= p1y + pSize.p1
+                ) {
+                    bvx = -bvx;
+                    bx += bvx
+                    suddenDeath(1)
+                }
+
+                //p2 collision
+                if (
+                    bx + 20 >= p2x &&
+                    by + 20 >= p2y &&
+                    by <= p2y + pSize.p2
+                ) {
+                    bvx = -bvx;
+                    bx += bvx
+                    suddenDeath(2)
+                }
+
+                //Scoring
+                if (bx > canvas.width) {
+                    p1Score++
+
+                    startRound()
+
+                }
+                if (bx < 0 - 20) {
+                    p2Score++
+
+                    startRound()
+
+                }
+            }
+            //setTimeout(()=>{
+            requestAnimationFrame(game)
+            //},100)
+
+
+        }
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms))
+        }
+        function startRound() {
+
+            bx = canvas.width / 2 - 10;
+            by = canvas.height / 2 - 10;
+
+            pSize = { p1: pBase, p2: pBase }
+
+            if (p1Score < maxPoints && p2Score < maxPoints) {
+                if (Math.random() < 0.5) {
+                    bvx = ballSpd;
+                } else {
+                    bvx = -ballSpd;
+                }
+                if (Math.random() < 0.5) {
+                    bvy = Math.random() * 10;
+                } else {
+                    bvy = Math.random() * -10;
+                }
+
+                ballMoving = false;
+
+                setTimeout(() => {
+                    ballMoving = true;
+                }, 1000);
+            } else {
+                ballMoving = false
+                endGame()
+
+            }
+        }
+        const SDSpeed = 1
+        function suddenDeath(p) {
+            gameStartTime = Date.now()
+            if (bvx < 0) {
+                bvx -= SDSpeed
+            } else {
+                bvx += SDSpeed
+            }
+            if (bvy < 0) {
+                bvy -= SDSpeed
+            } else {
+                bvy += SDSpeed
+            }
+
+            if (mode == "shrinking") {
+                if (p == 1) {
+                    if (pSize.p1 > 10) {
+                        pSize.p1 -= 5
+                    }
+                } else if (p == 2) {
+                    if (pSize.p2 > 10) {
+                        pSize.p2 -= 5
+                    }
+                }
+            }
+        }
+        function singleAI(players) {
+            if (players == 1) {
+                //AI
+
+                if (Math.abs(bvy) < 8) {
+                    if (p2y < by + bvy && p2y + pSize.p2 - 35 < canvas.height - 50) {
+                        p2y += pMovementSpd
+                    }
+                    if (p2y > by + bvy && p2y - 20 > 0 - 10) {
+                        p2y -= pMovementSpd
+                    }
+                } else {
+                    var distance = Math.sqrt(Math.pow(canv.width - bx, 2) + Math.pow((canv.width - bx) / bvx * bvy, 2))
+                    var distanceToRight = Math.abs(Math.sqrt(Math.pow(canv.height - by, 2) + Math.pow((canv.height - by) / bvy * bvx, 2)))
+
+                    // Calculate target y value when object reaches bottom of canvas
+                    var target = by + (distance / bvy * bvx);
+
+                    //con.innerText = `${distance} * ${bvy} + ${by} = ${target}`
+                    if (p2y < target && p2y + pSize.p2 - 35 < canvas.height - 50) {
+                        p2y += pMovementSpd
+                    }
+                    if (p2y > target && p2y - 20 > 0 - 10) {
+                        p2y -= pMovementSpd
+                    }
+                }
+
+
+            } else if (players == 0) {
+                //p1
+                p1y = by-35
+
+                //p2
+                if (Math.abs(bvy) < 8) {
+                    if (p2y < by + bvy && p2y + pSize.p2 - 35 < canvas.height - 50) {
+                        p2y += pMovementSpd
+                    }
+                    if (p2y > by + bvy && p2y - 20 > 0 - 10) {
+                        p2y -= pMovementSpd
+                    }
+                } else {
+                    var distance = Math.sqrt(Math.pow(canv.width - bx, 2) + Math.pow((canv.width - bx) / bvx * bvy, 2))
+                    var distanceToRight = Math.abs(Math.sqrt(Math.pow(canv.height - by, 2) + Math.pow((canv.height - by) / bvy * bvx, 2)))
+
+                    // Calculate target y value when object reaches bottom of canvas
+                    var target = by + (distance / bvy * bvx);
+
+                    //con.innerText = `${distance} * ${bvy} + ${by} = ${target}`
+                    if (p2y + pSize.p2 / 2 < target && p2y + pSize.p2 - 35 < canvas.height - 50) {
+                        p2y += pMovementSpd
+                    }
+                    if (p2y + pSize.p2 / 2 > target && p2y - 20 > 0 - 10) {
+                        p2y -= pMovementSpd
+                    }
+                }
+                p2y = by-35
+            }
+        }
+        function endGame() {
+            setTimeout(() => {
+                gameInit()
+            }, 2000);
+        }
+        function gameInit() {
+            var p1x = 20
+            p2x = canvas.width - 20
+            p1y = p2y = canvas.height / 3
+            bx = by = 0
+            bx = canvas.width / 2 - 10
+            by = canvas.height / 2 - 10
+            bvx = bvy = 0
+            p1Score = p2Score = 0
+            pMovementSpd = 10
+            ballMoving = 0
+            menu = true;
+            numPlayers = 1;
+            ballSpd = 5
+            pSize.p1 = pBase
+            pSize.p2 = pBase
+        }
+        function change() {
+            if (document.getElementById("LColor").value != "") {
+                Color = document.getElementById("LColor").value
+                document.getElementById("LColor").value = ""
+            }
+            if (document.getElementById("size").value != "") {
+                pBase = document.getElementById("size").value
+                document.getElementById("size").value = ""
+            }
+            if (document.getElementById("gmode").value != "") {
+                mode = toString(document.getElementById("gmode").value)
+                document.getElementById("gmode").value = ""
+            }
+        }
+        gameInit()
+        game()
+    </script>
+</body>
+
+</html>

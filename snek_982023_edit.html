@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Snek</title>
+  <style>
+    body {
+      background-color: rgb(28, 28, 28);
+    }
+
+    input {
+      background-color: gray;
+    }
+
+    label {
+      color: lightgray;
+    }
+
+    p {
+      color: lightgray;
+    }
+
+    button {
+      background-color: red;
+      border: solid blue 4px;
+      color: white;
+    }
+
+    /* Style the button that is used to open and close the collapsible content */
+    .collapsible {
+      background-color: #444;
+      color: gray;
+      cursor: pointer;
+      padding: 18px;
+      width: 100%;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 15px;
+    }
+
+    /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+    .active,
+    .collapsible:hover {
+      background-color: #ccc;
+    }
+
+    /* Style the collapsible content. Note: hidden by default */
+    .content {
+      padding: 0 18px;
+      background-color: black;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.2s ease-out;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="cDiv" style="text-align:left;">
+    <div id="scoreboard">
+      <p id="score" style="font-size:18px;">1</p>
+    </div>
+    <canvas id="gc" width="400" height="400" style=" border:solid navy 8px;"></canvas>
+  </div>
+  <br>
+  <button type="button" class="collapsible">Options</button>
+  <div class="content">
+    <div style="margin-top:10px;float:left;">
+      <p>Here you can change values of things in the code. If you leave it blank it doesn't change anything.<br>
+        If something you change breaks the entire game window reload the page to reset it.</p>
+      <label for="cPos">Canvas Align(left,center,top. Default:left):</label><br>
+      <input type="text" id="cPos" name="cPos">
+      <br><br>
+      <label for="CanvasX">Canvas X(Only works with multiples of 20. Default: 400):</label><br>
+      <input type="text" id="CanvasX" name="CanvasX">
+      <br><br>
+      <label for="CanvasY">Canvas Y(Default: 400):</label><br>
+      <input type="text" id="CanvasY" name="CanvasY">
+      <br><br>
+      <label for="bSize">Base Size(How large your default size is. Default:5):</label><br>
+      <input type="text" id="bSize" name="bSize">
+      <br><br>
+      <br>
+      <input type="submit" value="Change Things" onclick="input()" style="background-color: red;"><br>
+    </div>
+    <div style="margin-top:80px;float:left;">
+      <label for="fps">Game Speed(Default: 15):</label><br>
+      <input type="text" id="fps" name="fps">
+      <br><br>
+      <label for="AStr">Apple Strength(How much bigger you get when you eat apple. Default:1):</label><br>
+      <input type="text" id="AStr" name="AStr">
+      <br><br>
+      <label for="immor">Immortality, for when you feel like looking like you don't suck at snake. (true/false. Default:
+        false):</label><br>
+      <input type="text" id="immor" name="immor">
+      <br><br>
+      <label for="GridSize">Grid Size.(Change how large each individual grid square is. Default 20):</label><br>
+      <input type="text" id="GridSize" name="GridSize">
+      <br><br>
+      <label for="turnCd">Time in miliseconds before you can turn again. (Default:40):</label><br>
+      <input type="text" id="turnCd" name="turnCd">
+      <br><br>
+      <label for="sCol">Snake Color(list js color value. one word, all lowercase.):</label><br>
+      <input type="text" id="sCol" name="sCol">
+      <br><br>
+      <label for="aCol">Apple Color(Same instructions as Snake Color):</label><br>
+      <input type="text" id="aCol" name="aCol">
+      <br><br>
+    </div>
+  </div>
+  <script>
+    //Variables
+    var FPS = 1000
+    var ApplePower = 1
+    var CanvasPosition = "left"
+    var immortality = false
+    var bSize = 5
+    var highscore = 0
+    var score = 0
+    var snakeColor = "lime"
+    var appleColor = "red"
+
+    window.onload = function () {
+      canv = document.getElementById("gc");
+      ctx = canv.getContext("2d");
+      document.addEventListener("keydown", keyPush);
+
+    }
+    var interval = setInterval(game, 1000 / 15);
+    px = py = 10;
+    gs = 20; //Grid size
+    gridX = gridY = 20
+    ax = ay = 15;
+    xv = yv = 0
+    trail = [];
+    tail = 5;
+    function game() {
+      px += xv;
+      py += yv;
+      //Loop Around
+      if (px < 0) {
+        px = gridX - 1;
+      }
+      if (px > gridX - 1) {
+        px = 0;
+      }
+      if (py < 0) {
+        py = gridY - 1;
+      }
+      if (py > gridY - 1) {
+        py = 0;
+      }
+      //Clear Screen
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, canv.width, canv.height);
+      //Snake Body
+      ctx.fillStyle = snakeColor;
+
+      for (var i = 0; i < trail.length; i++) {
+        ctx.fillRect(trail[i].x * gs, trail[i].y * gs, gs - 2, gs - 2);
+        //Resets Length
+        if (trail[i].x == px && trail[i].y == py) {
+          if (immortality == false) {
+            tail = parseInt(bSize);
+          }
+        }
+      }
+      trail.push({ x: px, y: py });
+      while (trail.length > tail) {
+        trail.shift();
+
+      }
+      // Changes Player Size
+      if (ax == px && ay == py) {
+        tail += parseInt(ApplePower); // Convert ApplePower to an integer
+        appleMove()
+      }
+      function appleMove() {
+        ax = Math.floor(Math.random() * gridX);
+        ay = Math.floor(Math.random() * gridY);
+
+
+        for (var i = 0; i < trail.length; i++) {
+          if (trail[i].x == ax && trail[i].y == ay)
+
+            ax = Math.floor(Math.random() * gridX);
+          ay = Math.floor(Math.random() * gridY);
+        }
+      }
+      // Ensure that the trail length matches the tail length
+      while (trail.length > tail) {
+        trail.pop();
+      }
+      //Apple
+      ctx.fillStyle = appleColor;
+      ctx.fillRect(ax * gs, ay * gs, gs - 2, gs - 2);
+
+      if (score > highscore) {
+        highscore = score//+parseInt(ApplePower)
+      }
+      score = tail
+      document.getElementById("score").innerHTML = "Length: " + score + " Record: " + highscore
+
+    }
+    //Movement Commands
+    var lastDirChange = 0;
+    var dirChangeCd = 40;
+
+    function keyPush(evt) {
+      var currentTime = Date.now();
+      var elapsedTime = currentTime - lastDirChange
+
+      if (elapsedTime >= dirChangeCd) {
+        switch (evt.keyCode) {
+
+          //Left
+          case 37:
+            if (xv != 1) {
+              xv = -1; yv = 0;
+            }
+            evt.preventDefault();
+            break;
+          case 65:
+            if (xv != 1) {
+              xv = -1; yv = 0;
+            }
+            break;
+          //Up
+          case 38:
+            if (yv != 1) {
+              xv = 0; yv = -1;
+            }
+            evt.preventDefault();
+            break;
+
+          case 87:
+            if (yv != 1) {
+              xv = 0; yv = -1;
+            }
+            break;
+          //Right
+          case 39:
+            if (xv != -1) {
+              xv = 1; yv = 0;
+            }
+            evt.preventDefault();
+            break;
+          case 68:
+            if (xv != -1) {
+              xv = 1; yv = 0;
+            }
+            break;
+          //Down
+          case 40:
+            if (yv != -1) {
+              xv = 0; yv = 1;
+            }
+            evt.preventDefault();
+            break;
+          case 83:
+            if (yv != -1) {
+              xv = 0; yv = 1;
+            }
+            break;
+        }
+      }
+      lastDirChange = currentTime
+      //Other Inputs
+
+    }
+    function input() {
+
+      if (document.getElementById("cPos").value != "") {
+        document.getElementById("cDiv").style.textAlign = document.getElementById("cPos").value
+        document.getElementById("cPos").value = ""
+      }
+      if (document.getElementById("CanvasX").value != "") {
+        document.getElementById("gc").width = document.getElementById("CanvasX").value
+        gridX = document.getElementById("CanvasX").value / 20
+        ax = Math.floor(Math.random() * gridX);
+
+
+        document.getElementById("CanvasX").value = ""
+      }
+      if (document.getElementById("CanvasY").value != "") {
+        document.getElementById("gc").height = document.getElementById("CanvasY").value
+        gridY = document.getElementById("CanvasY").value / 20
+
+        ay = Math.floor(Math.random() * gridY);
+
+        document.getElementById("CanvasY").value = ""
+      }
+      if (document.getElementById("GridSize").value != "") {
+        gs = parseInt(document.getElementById("GridSize").value);
+        gridX = canv.width / gs;
+        gridY = canv.height / gs;
+        ax = Math.floor(Math.random() * gridX);
+        ay = Math.floor(Math.random() * gridY);
+        document.getElementById("GridSize").value = "";
+      }
+      if (document.getElementById("fps").value != "") {
+        FPS = document.getElementById("fps").value
+        clearInterval(interval)
+        interval = setInterval(game, 1000 / FPS);
+        document.getElementById("fps").value = ""
+      }
+      if (document.getElementById("AStr").value != "") {
+        ApplePower = document.getElementById("AStr").value
+        document.getElementById("AStr").value = ""
+      }
+      if (document.getElementById("immor").value != "") {
+        if (document.getElementById("immor").value == "true") {
+          immortality = true
+        } else {
+          immortality = false
+        }
+        document.getElementById("immor").value = ""
+      }
+
+      if (document.getElementById("turnCd").value != "") {
+        dirChangeCd = document.getElementById("turnCd").value
+        document.getElementById("turnCd").value = ""
+      }
+
+      if (document.getElementById("bSize").value != "") {
+        bSize = document.getElementById("bSize").value
+        document.getElementById("bSize").value = ""
+      }
+      if (document.getElementById("sCol").value != "") {
+        snakeColor = document.getElementById("sCol").value
+        document.getElementById("sCol").value = ""
+      }
+      if (document.getElementById("aCol").value != "") {
+        appleColor = document.getElementById("aCol").value
+        document.getElementById("aCol").value = ""
+      }
+
+
+
+    }
+
+    //Colapsible thing
+    var coll = document.getElementsByClassName("collapsible");
+    var i;
+
+
+
+    for (i = 0; i < coll.length; i++) {
+      coll[i].addEventListener("click", function () {
+        this.classList.toggle("active");
+        var content = this.nextElementSibling;
+        if (content.style.maxHeight) {
+          content.style.maxHeight = null;
+        } else {
+          content.style.maxHeight = content.scrollHeight + "px";
+        }
+      });
+    }
+
+
+  </script>
+</body>
+
+</html>

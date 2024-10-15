@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Sorting</title>
+</head>
+
+<body>
+    <div style="float:left;">
+        <canvas id="canvas" width="700" height="700"></canvas>
+
+        <div id="buttonDiv">
+            <input type="button" value="Bubble Sort" onclick="Sort(1)">
+            <input type="button" value="Selection Sort" onclick="Sort(2)">
+            <input type="button" value="Quicksort" onclick="Sort(3)">
+            <input type="button" value="Merge Sort" onclick="Sort(4)">
+            <input type="button" value="Heap Sort" onclick="Sort(5)">
+            <input type="button" value="Radix Sort" onclick="Sort(6)">
+            <input type="button" value="Insertion Sort (Broken)" onclick="Sort(7)">
+            <input type="button" value="Elbbub Sort (not actually a real sort. just fun.)" onclick="Sort(8)">
+        </div>
+        <p id="con"></p>
+    </div>
+    <div>
+        <label for="Rgb">Red in gradient:</label>
+        <input type="range" id="Rgb" name="Rgb" min="1" max="1000" value="200"><label for="Rgb" id="Rcount">200</label>
+        <br>
+        <label for="rGb">Green in gradient:</label>
+        <input type="range" id="rGb" name="rGb" min="1" max="1000" value="850"><label for="rGb" id="Gcount">850</label>
+        <br>
+        <label for="rgB">Blue in gradient:</label>
+        <input type="range" id="rgB" name="rgB" min="1" max="1000" value="10"><label for="rgB" id="Bcount">10</label>
+        <br>
+        <label for="gradType">Alt gradient</label><input type="checkbox" id="type" name="gradType">
+        <br>
+        <label for="rand">Toggle random values</label><input type="checkbox" id="rand" name="rand"
+            onclick="resetProgram()">
+
+    </div>
+
+    <script>
+        const canv = document.getElementById("canvas")
+        const ctx = canv.getContext("2d")
+
+        const con = document.getElementById("con")
+        canv.height = canv.width = 700
+
+        var array = []
+        generateArray()
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key == ' ') {
+                e.preventDefault()
+                resetProgram()
+            }
+        })
+
+        function resetProgram() {
+            array = [];
+            generateArray();
+        }
+
+        function generateArray() {
+            array = []
+            if (document.getElementById("rand").checked) {
+                for (i = 1; i < canv.width; i++) {
+                    array.push(Math.floor(Math.random() * canv.height))
+                }
+                array = array.sort((a, b) => 0.5 - Math.random())
+            } else {
+                for (i = 1; i < canv.width; i++) {
+                    array.push(i)
+                }
+                array = array.sort((a, b) => 0.5 - Math.random())
+            }
+        }
+
+        function Sort(type) {
+            //resetProgram()
+            setTimeout(() => {
+                switch (type) {
+                    case 1:
+                        bubbleSort()
+                        break;
+                    case 2:
+                        selectionSort()
+                        break;
+                    case 3:
+                        quickSort(0, array.length - 1)
+                        break;
+                    case 4:
+                        mergeSort(array, 0, array.length - 1)
+                        break;
+                    case 5:
+                        heapSort()
+                        break;
+                    case 6:
+                        radixSort()
+                        break;
+                    case 7:
+                        first()
+                        break;
+                    case 8: elbbubSort(); break;
+                }
+            }, 1000)
+        }
+        //Sort(1)
+
+        async function bubbleSort() {
+            var i, j;
+            var len = array.length;
+
+            var isSwapped = false;
+            var interval
+            for (i = 0; i < len; i++) {
+                interval = setInterval(() => {
+                    isSwapped = false;
+
+                    for (j = 0; j < (len - i - 1); j++) {
+                        if (array[j] > array[j + 1]) {
+                            var temp = array[j]
+                            array[j] = array[j + 1];
+                            array[j + 1] = temp;
+                            isSwapped = true;
+                        }
+                    }
+                    if (!isSwapped) {
+                        clearInterval(interval)
+                    }
+                }, 20)
+                // IF no two elements were swapped
+                // by inner loop, then break 
+                if (!isSwapped) {
+                    break;
+                }
+            }
+
+        }
+
+        async function elbbubSort() {
+            var i, j;
+            var len = array.length;
+
+            var isSwapped = false;
+            var interval
+            for (i = 0; i < len; i++) {
+                interval = setInterval(() => {
+                    isSwapped = false;
+
+                    for (j = 0; j < (len - i - 1); j++) {
+                        if (array[j] < array[j + 1]) {
+                            var temp = array[j]
+                            array[j] = array[j + 1];
+                            array[j + 1] = temp;
+                            isSwapped = true;
+                        }
+                    }
+                    if (!isSwapped) {
+                        clearInterval(interval)
+                    }
+                }, 20)
+                // IF no two elements were swapped
+                // by inner loop, then break 
+                if (!isSwapped) {
+                    break;
+                }
+            }
+
+        }
+
+        async function selectionSort() {
+            for (let i = 0; i < array.length; i++) {
+                let lowest = i;
+                for (let j = i + 1; j < array.length; j++) {
+                    if (array[j] < array[lowest]) {
+                        lowest = j;
+                    }
+                }
+                if (lowest !== i) {
+                    // Swap
+                    [array[i], array[lowest]] = [array[lowest], array[i]];
+                    await new Promise(resolve =>
+                        setTimeout(() => {
+                            resolve();
+                        }, 20)
+                    );
+                }
+            }
+            return array;
+        }
+
+        async function quickSort(start, end) {
+            if (start >= end) {
+                return;
+            }
+            let index = await partition(start, end);
+            await Promise.all([quickSort(start, index - 1), quickSort(index + 1, end)]);
+        }
+
+        async function partition(start, end) {
+            let pivotIndex = start;
+            let pivotValue = array[end];
+            for (let i = start; i < end; i++) {
+                if (array[i] < pivotValue) {
+                    await swap(i, pivotIndex);
+                    pivotIndex++;
+                }
+            }
+            await swap(pivotIndex, end);
+            return pivotIndex;
+        }
+
+        async function mergeSort(arr, l, r) {
+            if (l < r) {
+                let m = Math.floor(l + (r - l) / 2);
+                await mergeSort(arr, l, m);
+                await mergeSort(arr, m + 1, r);
+                await merge(arr, l, m, r, 1);
+            }
+        }
+
+        async function merge(arr, l, m, r, wait) {
+            let n1 = m - l + 1;
+            let n2 = r - m;
+            let L = new Array(n1);
+            let R = new Array(n2);
+            for (let i = 0; i < n1; i++)
+                L[i] = arr[l + i];
+            for (let j = 0; j < n2; j++)
+                R[j] = arr[m + 1 + j];
+            let i = 0;
+            let j = 0;
+            let k = l;
+            while (i < n1 && j < n2) {
+                if (L[i] <= R[j]) {
+                    arr[k] = L[i];
+                    i++;
+                } else {
+                    arr[k] = R[j];
+                    j++;
+                }
+                k++;
+                await new Promise(resolve =>
+                    setTimeout(() => {
+                        resolve();
+                    }, wait)
+                );
+            }
+            while (i < n1) {
+                arr[k] = L[i];
+                i++;
+                k++;
+                await new Promise(resolve =>
+                    setTimeout(() => {
+                        resolve();
+                    }, wait)
+                );
+            }
+            while (j < n2) {
+                arr[k] = R[j];
+                j++;
+                k++;
+                await new Promise(resolve =>
+                    setTimeout(() => {
+                        resolve();
+                    }, wait)
+                );
+            }
+        }
+
+        async function swap(i, j) {
+            let temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+            await new Promise(resolve =>
+                setTimeout(() => {
+                    resolve();
+                }, 1)
+            );
+        }
+
+        // Radix Sort
+        async function radixSort() {
+            const maxNum = Math.max(...array) * 10;
+            let divisor = 10;
+            while (divisor < maxNum) {
+                let buckets = [...Array(10)].map(() => []);
+                for (let num of array) {
+                    buckets[Math.floor((num % divisor) / (divisor / 10))].push(num);
+                }
+                for (let i = 0; i < buckets.length; i++) {
+                    for (let j = 0; j < buckets[i].length; j++) {
+                        array.shift();
+                    }
+                    for (let j = 0; j < buckets[i].length; j++) {
+                        array.push(buckets[i][j]);
+                        await new Promise(resolve =>
+                            setTimeout(() => {
+                                resolve();
+                            }, 10)
+                        );
+                    }
+                }
+
+                divisor *= 10;
+            }
+        }
+
+        // Heap Sort
+        async function heapSort() {
+            let length = array.length;
+            let i = Math.floor(length / 2 - 1);
+            let k = length - 1;
+
+            while (i >= 0) {
+                heapify(length, i);
+                i--;
+            }
+
+            while (k >= 0) {
+                [array[0], array[k]] = [array[k], array[0]];
+                heapify(k, 0);
+                k--;
+                await new Promise(resolve =>
+                    setTimeout(() => {
+                        resolve();
+                    }, 20)
+                );
+            }
+
+            function heapify(length, i) {
+                let largest = i;
+                let left = i * 2 + 1;
+                let right = left + 1;
+
+                if (left < length && array[left] > array[largest]) {
+                    largest = left;
+                }
+
+                if (right < length && array[right] > array[largest]) {
+                    largest = right;
+                }
+
+                if (largest !== i) {
+                    [array[i], array[largest]] = [array[largest], array[i]];
+                    heapify(length, largest);
+                }
+            }
+        }
+
+        // Insertion Sort
+        async function insertionSort() {
+            for (let i = 1; i < array.length; i++) {
+                let key = array[i];
+                let j = i - 1;
+
+                /* Move elements of array[0..i-1], that are
+                greater than key, to one position ahead
+                of their current position */
+                while (j >= 0 && array[j] > key) {
+                    array[j + 1] = array[j];
+                    j = j - 1;
+                    await new Promise(resolve =>
+                        setTimeout(() => {
+                            resolve();
+                        }, 1)
+                    );
+                }
+                array[j + 1] = key;
+            }
+        }
+
+
+        async function first() {
+            let max = Math.max(...array);
+            let min = Math.min(...array);
+            let pivot = (max + min) / 2;
+
+            let less = [];
+            let greater = [];
+
+            for (let i = 0; i < array.length; i++) {
+                if (array[i] <= pivot) {
+                    less.push(array[i]);
+                } else {
+                    greater.push(array[i]);
+                }
+            }
+
+            array = [...less, ...greater];
+
+            //sort halves
+            // Don't forget to add await delay in sorting halves as well
+
+            //selection sort for less
+            for (let i = 0; i < less.length; i++) {
+                let lowest = i;
+                for (let j = i + 1; j < less.length; j++) {
+                    if (less[j] < less[lowest]) {
+                        lowest = j;
+                    }
+                }
+                if (lowest !== i) {
+                    // Swap
+                    [less[i], less[lowest]] = [less[lowest], less[i]];
+                    await new Promise(resolve =>
+                        setTimeout(() => {
+                            resolve();
+                        }, 20)
+                    );
+                }
+                let highest = i;
+                for (let j = i + 1; j < greater.length; j++) {
+                    if (greater[j] < greater[highest]) {
+                        highest = j;
+                    }
+                }
+                if (highest !== i) {
+                    // Swap
+                    [greater[i], greater[highest]] = [greater[highest], greater[i]];
+                    await new Promise(resolve =>
+                        setTimeout(() => {
+                            resolve();
+                        }, 10)
+                    );
+                }
+                array = [...less, ...greater];
+                array = [...less, ...greater];
+            }
+
+            array = [...less, ...greater];
+        }
+
+
+
+
+        var Rslider = document.getElementById("Rgb");
+        var Gslider = document.getElementById("rGb");
+        var Bslider = document.getElementById("rgB");
+
+        function changeGrad() {
+            // Get the sliders
+
+
+            // Get the labels
+            var Rlabel = document.getElementById("Rcount");
+            var Glabel = document.getElementById("Gcount");
+            var Blabel = document.getElementById("Bcount");
+
+            // Update the labels when the sliders change
+            Rslider.oninput = function () {
+                Rlabel.innerHTML = this.value;
+            }
+            Gslider.oninput = function () {
+                Glabel.innerHTML = this.value;
+            }
+            Bslider.oninput = function () {
+                Blabel.innerHTML = this.value;
+            }
+        }
+
+
+        function getColor(height) {
+            if (1 == 2) {
+                const r = Math.floor(255 * (height / 200)); // Red based on height
+                const g = Math.floor(255 * (1 - height / 850)); // Green based on height
+                const b = Math.floor(255 * (1 - height / 10)); // Blue based on height
+                return `rgb(${r}, ${g}, ${b})`;
+            } else {
+                if (document.getElementById("type").checked) {
+                    const r = Math.floor(255 * (1 - height / Rslider.value)); // Red based on height
+                    const g = Math.floor(255 * (1 - height / Gslider.value)); // Green based on height
+                    const b = Math.floor(255 * (1 - height / Bslider.value)); // Blue based on height
+                    return `rgb(${r}, ${g}, ${b})`;
+                } else {
+                    const r = Math.floor(255 * (height / Rslider.value)); // Red based on height
+                    const g = Math.floor(255 * (1 - height / Gslider.value)); // Green based on height
+                    const b = Math.floor(255 * (1 - height / Bslider.value)); // Blue based on height
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+            }
+        }
+
+        function draw() {
+
+            changeGrad()
+
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canv.width, canv.height);
+
+            for (i = 0; i < array.length; i++) {
+                ctx.fillStyle = getColor(array[i]);
+                ctx.fillRect(i, canv.height - array[i], 1, array[i]);
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+
+    </script>
+</body>
+
+</html>
