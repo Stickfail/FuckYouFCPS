@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,36 +8,52 @@
     <style>
         body {
             font-family: monospace;
-            background-color: #1e1e1e; /* Dark background */
-            color: #ffffff; /* Light text */
+            background-color: #1e1e1e;
+            /* Dark background */
+            color: #ffffff;
+            /* Light text */
             padding: 20px;
         }
+
         #commandLine {
-            background: #282c34; /* Darker background for command line */
-            border: 1px solid #444; /* Darker border */
+            background: #282c34;
+            /* Darker background for command line */
+            border: 1px solid #444;
+            /* Darker border */
             padding: 10px;
-            width: 600px; /* Fixed width */
-            height: 400px; /* Fixed height */
-            overflow-y: auto; /* Scrollable area */
+            width: 600px;
+            /* Fixed width */
+            height: 400px;
+            /* Fixed height */
+            overflow-y: auto;
+            /* Scrollable area */
         }
+
         #input {
             border: none;
             outline: none;
             width: 100%;
-            background: transparent; /* Transparent input */
-            color: #ffffff; /* Light text */
+            background: transparent;
+            /* Transparent input */
+            color: #ffffff;
+            /* Light text */
         }
+
         .menu-option {
-            color: #569cd6; /* Option color */
+            color: #569cd6;
+            /* Option color */
         }
     </style>
 </head>
+
 <body>
     <div id="commandLine">
-        <p>Welcome to the AJS website! Type a command:</p>
-        <p class="menu-option">1. Games</p>
-        <p class="menu-option">2. Extras</p>
-        <p class="menu-option">3. HTML Editor</p>
+        <p>Cool website for AJS. Includes a shitty html editor, and my games. Type in a command:</p>
+        <div id="options">
+            <p class="menu-option">1. Games</p>
+            <p class="menu-option">2. Extras</p>
+            <p class="menu-option">3. HTML Editor</p>
+        </div>
         <p id="output"></p> <!-- Output area -->
         <input id="input" type="text" placeholder="Type your command here..." autofocus />
     </div>
@@ -45,6 +62,8 @@
         const output = document.getElementById('output');
         const input = document.getElementById('input');
 
+
+        var status = 1
         // Function to handle user input
         function handleInput(event) {
             if (event.key === 'Enter') {
@@ -52,66 +71,94 @@
                 output.innerHTML += `<div>${command}</div>`; // Echo the command
                 input.value = ''; // Clear input
 
-                switch (command) {
-                    case '1':
-                    case 'games':
-                        output.innerHTML += '<div>Loading Games...</div>';
-                        // Add functionality to load games here
-                        displayGames()
-                        break;
-                    case '2':
-                    case 'settings':
-                        output.innerHTML += '<div>(Extras Coming Soon!)</div>';
-                        // Add functionality to open settings here
-                        break;
-                    case '3':
-                    case 'html editor':
-                        output.innerHTML += '<div>Opening HTML Editor...</div>';
-                        // Redirect to editor.html
-                        window.location.href = 'editor.html'; // Link to the editor
-                        break;
-                    default:
-                        output.innerHTML += '<div>Unknown command. Try again.</div>';
+                if (status == 1) {
+                    switch (command) {
+                        case '1':
+                        case 'games':
+                            output.innerHTML += '<div>Loading Games...</div>';
+                            // Add functionality to load games here
+                            displayGames()
+                            break;
+                        case '2':
+                        case 'settings':
+                            output.innerHTML += '<div>(Extras Coming Soon!)</div>';
+                            // Add functionality to open settings here
+                            break;
+                        case '3':
+                        case 'html editor':
+                            output.innerHTML += '<div>Opening HTML Editor...</div>';
+                            // Redirect to editor.html
+                            window.location.href = 'editor.html'; // Link to the editor
+                            break;
+                        default:
+                            output.innerHTML += '<div>Unknown command. Try again.</div>';
+                    }
+                } else if (status == 2) {
+                    switch (command) {
+                        case '1':
+                        case 'snek':
+                            output.innerHTML += '<div>Loading Snek.html...</div>';
+                            // Add functionality to load games here
+                            window.location.href = 'games/snek_982023_edit.html'
+                            displayGames()
+                            break;
+                        case '2':
+                        case 'pong':
+                            output.innerHTML += '<div>Loading Pong.html...</div>';
+                            // Add functionality to open settings here
+                            window.location.href = 'games/pong2.html'
+                            break;
+                        case '3':
+                        case 'platformer':
+                            output.innerHTML += '<div>Loading Platformer.html...</div>';
+                            // Redirect to editor.html
+                            window.location.href = 'games/platformer.html'; // Link to the editor
+                            break;
+                        case '4':
+                        case 'sort':
+                            output.innerHTML += '<div>Loading Sort.html...</div>';
+                            // Redirect to editor.html
+                            window.location.href = 'games/sort.html'
+                            break;
+                        default:
+                            output.innerHTML += '<div>Unknown command. Try again.</div>';
+                    }
+                    // Auto-scroll to the bottom
+                    output.scrollTop = output.scrollHeight;
                 }
-                // Auto-scroll to the bottom
-                output.scrollTop = output.scrollHeight;
             }
         }
 
-        function displayGames(){
-            output.innerHTML = "" //cls
-            output.innerHTML += `Displaying games...
-            
-            `
-            //cool animation for it because why not?
-            for(let g=1;g<5;g++){
-                switch(g){
-                    case 1:
-                        output.innerHTML += `Snek
-                        `
-                        break;
-                    case 2:
-                        output.innerHTML += `Pong
-                        `
-                        break;
-                    case 3:
-                        output.innerHTML += `Platformer (pre-graphics version)
-                        `
-                        break;
-                    case 4:
-                        output.innerHTML += `Sorting algorithm thing
-                        `
-                        break;
+            function displayGames() {
+                //cls
+                var menuOptions = document.getElementById("options")
+                menuOptions.innerHTML = ""
+                output.innerHTML = ""
+
+                for (let g = 0; g < 4; g++) {
+                    let game = document.createElement("p");
+                    game.className = "menu-option"
+                    switch (g) {
+                        case 1:
+                            game.innerHTML = "1. Snek"
+                            break;
+                        case 2:
+                            game.innerHTML = "2. Pong"
+                            break;
+                        case 3:
+                            game.innerHTML = "3. Platformer"
+                            break;
+                        case 4:
+                            game.innerHTML = "4. Sorting Algorithm Thing"
+                            break;
+                    }
+                    menuOptions.appendChild(game)
                 }
-                output.innerHTML += `
-                `
             }
 
-
-        }
-
-        // Event listener for input
-        input.addEventListener('keydown', handleInput);
+            // Event listener for input
+            input.addEventListener('keydown', handleInput);
     </script>
 </body>
+
 </html>
