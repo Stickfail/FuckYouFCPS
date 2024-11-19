@@ -112,14 +112,20 @@
                         case '3':
                         case 'platformer':
                             output.innerHTML += '<div>Loading Platformer.html...</div>';
-                            // Redirect to editor.html
-                            window.location.href = 'games/platformer.html'; // Link to the editor
+
+                            window.location.href = 'games/platformer.html';
                             break;
                         case '4':
                         case 'sort':
                             output.innerHTML += '<div>Loading Sort.html...</div>';
                             // Redirect to editor.html
                             window.location.href = 'games/sort.html'
+                            break;
+                        case '5':
+                        case 'swarm defense':
+                            output.innerHTML += '<div>Loading swarm.html...</div>';
+                            // Redirect to editor.html
+                            window.location.href = 'games/SwarmGame/index.html'
                             break;
                         default:
                             output.innerHTML += '<div>Unknown command. Try again.</div>';
@@ -137,7 +143,7 @@
                 output.innerHTML = ""
                 document.getElementById("title").innerText = "Games"
 
-                for (let g = 0; g < 5; g++) {
+                for (let g = 0; g < 6; g++) {
                     let game = document.createElement("p");
                     game.className = "menu-option"
                     switch (g) {
@@ -152,6 +158,9 @@
                             break;
                         case 4:
                             game.innerHTML = "4. Sorting Algorithm Thing"
+                            break;
+                        case 5:
+                            game.innerHTML = "5. Swarm Defense"
                             break;
                     }
                     menuOptions.appendChild(game)
